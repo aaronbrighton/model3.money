@@ -76,12 +76,12 @@ class DeployStage extends Stage {
   constructor(scope: Construct, id: string, props?: StageProps) {
     super(scope, id, props);
 
-    const domains = process.env.route53_ZoneName?.split(','); 
+    const domains = process.env.domains?.split(',') ?? String(this.node.tryGetContext('domains')).split(','); 
 
     new Model3DotMoneyStack(this, 'model3-money', {
-      route53_HostedZoneId: process.env.route53_HostedZoneId ?? '',
-      route53_ZoneName: process.env.route53_ZoneName ?? '',
-      domains: domains ?? [],
+      route53_HostedZoneId: process.env.route53_HostedZoneId ?? this.node.tryGetContext('route53_HostedZoneId'),
+      route53_ZoneName: process.env.route53_ZoneName ?? this.node.tryGetContext('route53_ZoneName'),
+      domains: domains,
     });
   }
 }
@@ -106,9 +106,15 @@ export class PipelineStack extends Stack {
       sourceArtifact,
       cloudAssemblyArtifact,
       environmentVariables: {
-        route53_HostedZoneId: this.node.tryGetContext('route53_HostedZoneId') ?? process.env.route53_HostedZoneId,
-        route53_ZoneName: this.node.tryGetContext('route53_ZoneName') ?? process.env.route53_ZoneName,
-        domains: this.node.tryGetContext('domains').join(',') ?? process.env.route53_ZoneName?.split(','),
+        route53_HostedZoneId: {
+          value: this.node.tryGetContext('route53_HostedZoneId') ?? process.env.route53_HostedZoneId,
+        },
+        route53_ZoneName: {
+          value: this.node.tryGetContext('route53_ZoneName') ?? process.env.route53_ZoneName,
+        },
+        domains: {
+          value: this.node.tryGetContext('domains').join(',') ?? process.env.domains?.split(','),
+        },
       },
       buildCommand: 'yarn build && yarn test',
     });
