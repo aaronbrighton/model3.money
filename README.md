@@ -42,4 +42,4 @@ yarn deploy
 
 ### Check on the status of the deployment
 
-Once CDK has finished standing up the CodePipeline pipeline in the `yarn deploy` step.  The pipeline will proceed with the actualy static site deployment.  You can check the status of it from the CodePipeline UI: [https://console.aws.amazon.com/codesuite/codepipeline/pipelines](https://console.aws.amazon.com/codesuite/codepipeline/pipelines)
+Once CDK has finished standing up the CodePipeline pipeline in the `yarn deploy` step.  The pipeline will proceed with the actual static site deployment.  You can check the status of it from the CodePipeline UI: [https://console.aws.amazon.com/codesuite/codepipeline/pipelines](https://console.aws.amazon.com/codesuite/codepipeline/pipelines)
