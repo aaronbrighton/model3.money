@@ -19,7 +19,7 @@ export class Model3DotMoneyStack extends Stack {
     ];
 
     const publicZone = route53.HostedZone.fromHostedZoneAttributes(this, 'route53-zone', {
-      hostedZoneId: 'ZRZJWLXW3FS0K',
+      hostedZoneId: 'ZWO8BGKDHAA7T',
       zoneName: 'model3.money',
     });
 
