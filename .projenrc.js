@@ -23,4 +23,8 @@ const project = new AwsCdkTypeScriptApp({
   projectType: ProjectType.APP,
   release: false,
 });
+
+project.npmignore.exclude('cdk.context.json');
+project.gitignore.exclude('cdk.context.json');
+
 project.synth();

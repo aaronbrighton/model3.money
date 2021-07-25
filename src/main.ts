@@ -9,18 +9,21 @@ import { App, Construct, Stack, StackProps, Duration, Stage, StageProps, SecretV
 import * as pipelines from '@aws-cdk/pipelines';
 import { CloudFrontToS3 } from '@aws-solutions-constructs/aws-cloudfront-s3';
 
-export class Model3DotMoneyStack extends Stack {
-  constructor(scope: Construct, id: string, props: StackProps = {}) {
-    super(scope, id, props);
+export interface Model3DotMoneyProps {
+  route53_HostedZoneId: string;
+  route53_ZoneName: string;
+  domains: string[];
+}
 
-    const domains = [
-      'model3.money',
-      'www.model3.money',
-    ];
+export class Model3DotMoneyStack extends Stack {
+  constructor(scope: Construct, id: string, props: Model3DotMoneyProps) {
+    super(scope, id);
+
+    const domains = props.domains;
 
     const publicZone = route53.HostedZone.fromHostedZoneAttributes(this, 'route53-zone', {
-      hostedZoneId: 'ZWO8BGKDHAA7T',
-      zoneName: 'model3.money',
+      hostedZoneId: props.route53_HostedZoneId,
+      zoneName: props.route53_ZoneName,
     });
 
     const customCertificate = new acm.Certificate(this, 'custom-certificate', {
@@ -73,7 +76,13 @@ class DeployStage extends Stage {
   constructor(scope: Construct, id: string, props?: StageProps) {
     super(scope, id, props);
 
-    new Model3DotMoneyStack(this, 'model3-money');
+    const domains = process.env.route53_ZoneName?.split(','); 
+
+    new Model3DotMoneyStack(this, 'model3-money', {
+      route53_HostedZoneId: process.env.route53_HostedZoneId ?? '',
+      route53_ZoneName: process.env.route53_ZoneName ?? '',
+      domains: domains ?? [],
+    });
   }
 }
 
@@ -96,6 +105,11 @@ export class PipelineStack extends Stack {
     const synthAction = pipelines.SimpleSynthAction.standardYarnSynth({
       sourceArtifact,
       cloudAssemblyArtifact,
+      environmentVariables: {
+        route53_HostedZoneId: this.node.tryGetContext('route53_HostedZoneId') ?? process.env.route53_HostedZoneId,
+        route53_ZoneName: this.node.tryGetContext('route53_ZoneName') ?? process.env.route53_ZoneName,
+        domains: this.node.tryGetContext('domains').join(',') ?? process.env.route53_ZoneName?.split(','),
+      },
       buildCommand: 'yarn build && yarn test',
     });
 

@@ -14,6 +14,7 @@
 /tsconfig.eslint.json
 /tsconfig.jest.json
 /tsconfig.json
+cdk.context.json
 cdk.out/
 dist
 junit.xml
