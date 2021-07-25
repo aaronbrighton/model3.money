@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html">
+  
+  <meta property="og:title" content="Model3.Money - Monthly Cost & TCO Calculator">
+  <meta property="og:description" content="See how much money you'd save driving a Tesla Model 3">
+  <meta property="og:image" content="https://model3.money/images/model3large.png">
+  <meta property="og:url" content="https://model3.money/">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <title>Model3.Money - Monthly Cost & TCO Calculator</title>
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" type="text/css" media="all" href="css/styles.css">
+
+  <script>
+    var defGasPrice=1.259
+    var defAnnualInsurance=1500;
+    var defAnnualDriving=20000;
+    var defLoanTerm=96;
+    var defLoanRate=4.6;
+    var defLoanDownPayment=7500;
+    var defYearsOfOwnership = 8;
+    var vehicle={}
+    
+    vehicle['fordFusion'] = 
+    {
+      fuelEfficiency: 8.7, // https://fcr-ccc.nrcan-rncan.gc.ca/en
+      annualMaintenance: 1088.53, // https://www.edmunds.com/ford/fusion/2018/cost-to-own/
+      price: 28985 // https://www.google.com/search?client=firefox-b-d&channel=trow&q=ford+fusion+msrp
+    };
+    vehicle['mercedesCClass'] = 
+    {
+      fuelEfficiency: 9.4, // https://fcr-ccc.nrcan-rncan.gc.ca/en
+      annualMaintenance: 1751.70, // https://www.edmunds.com/mercedes-benz/c-class/2019/cost-to-own/
+      price: 46100 // https://www.google.com/search?client=firefox-b-d&channel=trow&q=mercedes+c+class+msrp
+    };
+    vehicle['bmw3Series'] = 
+    {
+      fuelEfficiency: 8.3, // https://fcr-ccc.nrcan-rncan.gc.ca/en
+      annualMaintenance: 1789.86, // https://www.edmunds.com/bmw/3-series/2019/cost-to-own/
+      price: 48900 // https://www.google.com/search?client=firefox-b-d&channel=trow&q=mercedes+c+class+msrp
+    };
+  
+    var defaultVehicle = 'mercedesCClass';
+
+    
+    function setDefaults(vehicleName, def)
+    {
+      if (def === undefined) { def=false; }
+      
+      document.getElementsByName('gasFuelEfficiency')[0].value = numberWithCommas(vehicle[vehicleName].fuelEfficiency);
+      document.getElementsByName('gasAnnualMaintenance')[0].value = numberWithCommas(vehicle[vehicleName].annualMaintenance);
+      document.getElementsByName('gasVehiclePrice')[0].value = numberWithCommas(vehicle[vehicleName].price);
+      
+      if (def===true)
+      {
+        document.getElementsByName('gasPrice')[0].value = defGasPrice;
+        document.getElementsByName('annualInsurance')[0].value = numberWithCommas(defAnnualInsurance);
+        document.getElementsByName('annualDriving')[0].value = numberWithCommas(defAnnualDriving);
+        
+        document.getElementsByName('loanTerm')[0].value = numberWithCommas(defLoanTerm);
+        document.getElementsByName('loanRate')[0].value = numberWithCommas(defLoanRate);
+        document.getElementsByName('loanDownPayment')[0].value = numberWithCommas(defLoanDownPayment);
+        
+        document.getElementsByName('yearsOfOwnership')[0].value = numberWithCommas(defYearsOfOwnership);
+      }
+      
+      document.getElementById('vehicleMonthlyResultLabel').innerHTML = document.getElementById(vehicleName+'Label').innerHTML.replace(' <img src="images/check.png" class="check">', '');
+      document.getElementById('vehicleTcoResultLabel').innerHTML = document.getElementById(vehicleName+'Label').innerHTML.replace(' <img src="images/check.png" class="check">', '');
+      
+      document.getElementById('gasMonthly').style.backgroundImage = "url('images/"+vehicleName.toLowerCase()+".png')";
+      document.getElementById('gasMonthly').style.backgroundPosition='right top';
+      document.getElementById('gasMonthly').style.backgroundRepeat='no-repeat';
+      document.getElementById('gasMonthly').style.backgroundSize='contain'
+      document.getElementById('gasTco').style.backgroundImage = "url('images/"+vehicleName.toLowerCase()+".png')";
+      document.getElementById('gasTco').style.backgroundPosition='right top';
+      document.getElementById('gasTco').style.backgroundRepeat='no-repeat';
+      document.getElementById('gasTco').style.backgroundSize='contain'
+    }
+    
+    function runCalculation()
+    {
+      gasPrice = parseFloat(document.getElementsByName('gasPrice')[0].value.replace(",", "").replace(" ", ""));
+      gasFuelEfficiency = parseFloat(document.getElementsByName('gasFuelEfficiency')[0].value.replace(",", "").replace(" ", ""));
+      gasAnnualMaintenance = parseFloat(document.getElementsByName('gasAnnualMaintenance')[0].value.replace(",", "").replace(" ", ""));
+      gasVehiclePrice = parseFloat(document.getElementsByName('gasVehiclePrice')[0].value.replace(",", "").replace(" ", ""));
+
+      evElectricityPrice = 0.065;
+      evFuelEfficiency = 16.1;
+      evAnnualMaintenance = 200;
+      evVehiclePrice = 49990;
+      
+      annualInsurance = parseFloat(document.getElementsByName('annualInsurance')[0].value.replace(",", "").replace(" ", ""));
+      annualDriving = parseFloat(document.getElementsByName('annualDriving')[0].value.replace(",", "").replace(" ", ""));
+      
+      loanTerm = parseFloat(document.getElementsByName('loanTerm')[0].value.replace(",", "").replace(" ", ""));
+      loanRate = parseFloat(document.getElementsByName('loanRate')[0].value.replace(",", "").replace(" ", ""));
+      loanDownPayment = parseFloat(document.getElementsByName('loanDownPayment')[0].value.replace(",", "").replace(" ", ""));
+      
+      yearsOfOwnership = parseFloat(document.getElementsByName('yearsOfOwnership')[0].value.replace(",", "").replace(" ", ""));
+      
+      gasCashFlowWithLoan = cashFlow(gasPrice, gasFuelEfficiency, gasAnnualMaintenance, gasVehiclePrice, annualInsurance, annualDriving, loanTerm, loanRate, loanDownPayment)
+      evCashFlowWithLoan = cashFlow(evElectricityPrice, evFuelEfficiency, evAnnualMaintenance, evVehiclePrice, annualInsurance, annualDriving, loanTerm, loanRate, loanDownPayment)
+      
+      document.getElementById('gasMonthly').value = '$'+numberWithCommas(Math.round(gasCashFlowWithLoan));
+      document.getElementById('evMonthly').value = '$'+numberWithCommas(Math.round(evCashFlowWithLoan));
+      
+      gasTco = tco(gasPrice, gasFuelEfficiency, gasAnnualMaintenance, gasVehiclePrice, annualInsurance, annualDriving, yearsOfOwnership)
+      evTco = tco(evElectricityPrice, evFuelEfficiency, evAnnualMaintenance, evVehiclePrice, annualInsurance, annualDriving, yearsOfOwnership)
+      
+      document.getElementById('gasTco').value = '$'+numberWithCommas(Math.round(gasTco));
+      document.getElementById('evTco').value = '$'+numberWithCommas(Math.round(evTco));
+      
+      if (evTco)
+      {
+        document.getElementById('gasTco').style.backgroundColor='#ab6a6a';
+        document.getElementById('evTco').style.backgroundColor='#6bb174';
+        document.getElementById('goButton').innerHTML = 'Do you want to save $'+numberWithCommas(Math.round(gasTco-evTco))+' TCO?';
+      }
+      else
+      {
+        document.getElementById('gasTco').style.backgroundColor='#6bb174';
+        document.getElementById('evTco').style.backgroundColor='#ab6a6a';
+      }
+      
+      if (evCashFlowWithLoan < gasCashFlowWithLoan)
+      {
+        document.getElementById('gasMonthly').style.backgroundColor='#ab6a6a';
+        document.getElementById('evMonthly').style.backgroundColor='#6bb174';
+        document.getElementById('goButton').innerHTML = 'Do you want to save $'+numberWithCommas(Math.round(gasCashFlowWithLoan-evCashFlowWithLoan))+'/month?';
+      }
+      else
+      {
+        document.getElementById('gasMonthly').style.backgroundColor='#6bb174';
+        document.getElementById('evMonthly').style.backgroundColor='#ab6a6a';
+      }
+      
+    }
+    
+    function cashFlow(fuelPrice, fuelEfficiency, annualMaintenance, vehiclePrice, annualInsurance, annualDriving, loanTerm, loanRate, loanDownPayment)
+    {
+      fuelCostPerMonth = (((annualDriving/100)*fuelEfficiency)*fuelPrice)/12;
+      maintenanceCostPerMonth = annualMaintenance/12;
+      insuranceCostPerMonth = annualInsurance/12;
+      totalCostPerMonthBeforeLoan = fuelCostPerMonth+maintenanceCostPerMonth+insuranceCostPerMonth;
+      
+      monthlyLoanPaymentCost = pmtWithAnnualRate(loanRate, loanTerm, vehiclePrice-loanDownPayment, 0, 0)
+      
+      toalMonthlyCost = totalCostPerMonthBeforeLoan+monthlyLoanPaymentCost;
+      return toalMonthlyCost;
+    }
+    
+    function tco(fuelPrice, fuelEfficiency, annualMaintenance, vehiclePrice, annualInsurance, annualDriving, yearsOfOwnership)
+    {
+      fuelCostPerLife = (((annualDriving/100)*fuelEfficiency)*fuelPrice)*yearsOfOwnership;
+      maintenanceCostPerLife = annualMaintenance*yearsOfOwnership;
+      insuranceCostPerLife = annualInsurance*yearsOfOwnership;
+      totalCostPerLife = fuelCostPerLife+maintenanceCostPerLife+insuranceCostPerLife+parseFloat(vehiclePrice);
+      return totalCostPerLife;
+    }
+    
+    function pmtWithAnnualRate(annualRate, monthlyPayments, presentValue, residualValue, advancedPayments) {
+      monthlyRate = annualRate / 1200
+      t1 = 1 + monthlyRate
+      t2 = Math.pow(t1,monthlyPayments)
+      t3 = Math.pow(t1,(monthlyPayments-advancedPayments))
+      return (presentValue-(residualValue/t2))/(((1-(1/(t3)))/monthlyRate)+advancedPayments);
+    }
+    
+    function moreCarSpecificsFunc()
+    {
+      document.getElementById('moreCarSpecifics').style.display = 'none';
+      numOfElements = document.getElementsByClassName('hidden-field').length
+      for (i=0;i<numOfElements;i++)
+      {
+        document.getElementsByClassName('hidden-field')[0].classList.remove("hidden-field");
+      }
+    }
+    
+    function numberWithCommas(x) {
+       return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    
+    function changeRadio(button)
+    {
+      // Find out what's checked, turn it off, turn on the new one.
+      document.getElementsByClassName('car-cc-checked')[0].classList.remove("car-cc-checked")
+      document.getElementById(button).checked=true;
+      document.getElementById(button).classList.add("car-cc-checked");
+      
+      if (button == 'veh1')
+      {
+        if (document.getElementById('fordFusionLabel').innerHTML.includes(' <img src="images/check.png" class="check">') === false)
+        {
+          document.getElementById('fordFusionLabel').innerHTML = document.getElementById('fordFusionLabel').innerHTML+' <img src="images/check.png" class="check">'
+        }
+        document.getElementById('mercedesCClassLabel').innerHTML = document.getElementById('mercedesCClassLabel').innerHTML.replace(' <img src="images/check.png" class="check">', '')
+        document.getElementById('bmw3SeriesLabel').innerHTML = document.getElementById('bmw3SeriesLabel').innerHTML.replace(' <img src="images/check.png" class="check">', '')
+        setDefaults('fordFusion');runCalculation()
+      }
+      
+      if (button == 'veh2')
+      {
+        console.log(document.getElementById('mercedesCClassLabel').innerHTML)
+        if (document.getElementById('mercedesCClassLabel').innerHTML.includes(' <img src="images/check.png" class="check">') === false)
+        {
+          document.getElementById('mercedesCClassLabel').innerHTML = document.getElementById('mercedesCClassLabel').innerHTML+' <img src="images/check.png" class="check">'
+        }
+        document.getElementById('fordFusionLabel').innerHTML = document.getElementById('fordFusionLabel').innerHTML.replace(' <img src="images/check.png" class="check">', '')
+        document.getElementById('bmw3SeriesLabel').innerHTML = document.getElementById('bmw3SeriesLabel').innerHTML.replace(' <img src="images/check.png" class="check">', '')
+        setDefaults('mercedesCClass');runCalculation()
+      }
+      
+      if (button == 'veh3')
+      {
+        if (document.getElementById('bmw3SeriesLabel').innerHTML.includes(' <img src="images/check.png" class="check">') === false)
+        {
+          document.getElementById('bmw3SeriesLabel').innerHTML = document.getElementById('bmw3SeriesLabel').innerHTML+' <img src="images/check.png" class="check">'
+        }
+        document.getElementById('fordFusionLabel').innerHTML = document.getElementById('fordFusionLabel').innerHTML.replace(' <img src="images/check.png" class="check">', '')
+        document.getElementById('mercedesCClassLabel').innerHTML = document.getElementById('mercedesCClassLabel').innerHTML.replace(' <img src="images/check.png" class="check">', '')
+        setDefaults('bmw3Series');runCalculation()
+      }
+    }
+  </script>
+  
+</head>
+
+<body onload="setDefaults(defaultVehicle, true);runCalculation()">
+
+  <div id="wrapper">
+  
+  
+  <h1 class="box">
+    Model3.Money
+    <img src="images/model3.png" id="logoImg" />
+    Cost Calculator
+  </h1>
+  <!--<h2>Compared to traditional<sup>(<a href="https://twitter.com/elonmusk/status/1117637496517603329" target="_blank">horse</a>)</sup> sedans</h2>-->
+  <form onsubmit="return false">
+  <div class="col-3 switch cc-selector">
+    <label id="fordFusionLabel">Ford Fusion</label>
+    <center style="position:relative; margin-bottom:8px;"><input type="radio" id="veh1" class="car-cc veh1" name="vehicle" value="veh1" onclick="changeRadio('veh1')"></center>
+  </div>
+  <div class="col-3 switch cc-selector">
+    <label id="mercedesCClassLabel">Mercedes C-Class <img src="images/check.png" class="check"></label>
+    <!--<label id="mercedesCClassLabel" class="car-cc" for="veh2"></label>-->
+    <center style="position:relative;margin-bottom:8px;"><input type="radio" id="veh2" class="car-cc car-cc-checked veh2" name="vehicle" value="veh2" onclick="changeRadio('veh2')" checked="checked"></center>
+  </div>
+  <div class="col-3 switch cc-selector">
+    <label id="bmw3SeriesLabel">BMW 3 Series</label>
+    <center style="position:relative;margin-bottom:8px;"><input type="radio" id="veh3" class="car-cc veh3" name="vehicle" value="veh3" onclick="changeRadio('veh3')"></center>
+  </div>
+  <div class="col-4">
+    <label>
+      Vehicle Price ($)
+      <input placeholder="" id="gasVehiclePrice" name="gasVehiclePrice" tabindex="1" onkeyup="runCalculation()">
+    </label>
+  </div>
+  <div class="col-4">
+    <label>
+      Gas Price ($)
+      <input placeholder="" id="gasPrice" name="gasPrice" tabindex="2" onkeyup="runCalculation()">
+    </label>
+  </div>
+  <div class="col-4">
+    <label>
+      Annual Driving (KM)
+      <input placeholder="" id="annualDriving" name="annualDriving" tabindex="3" onkeyup="runCalculation()">
+    </label>
+  </div>
+  <div class="col-4">
+    <label>
+      Length of Ownership (Years)
+      <input placeholder="" id="yearsOfOwnership" name="yearsOfOwnership" tabindex="4" onkeyup="runCalculation()">
+    </label>
+  </div>
+  
+  <div class="col-3">
+    <label>
+      Fuel Efficiency (Litres/100KM)
+      <input placeholder="" id="gasFuelEfficiency" name="gasFuelEfficiency" tabindex="5" onkeyup="runCalculation()">
+    </label>
+  </div>
+  <div class="col-3">
+    <label>
+      Annual Maintenance ($)
+      <input placeholder="" id="gasAnnualMaintenance" name="gasAnnualMaintenance" tabindex="6" onkeyup="runCalculation()">
+    </label>
+  </div>
+  <div class="col-3">
+    <label>
+      Annual Insurance ($)
+      <input placeholder="" id="annualInsurance" name="annualInsurance" tabindex="7" onkeyup="runCalculation()">
+    </label>
+  </div>
+  
+  <div class="col-3">
+    <label>
+      Loan Term (Months)
+      <input placeholder="" id="loanTerm" name="loanTerm" tabindex="8" onkeyup="runCalculation()">
+    </label>
+  </div>
+  <div class="col-3">
+    <label>
+      Loan Rate (%)
+      <input placeholder="" id="loanRate" name="loanRate" tabindex="9" onkeyup="runCalculation()">
+    </label>
+  </div>
+  <div class="col-3">
+    <label>
+      Down Payment ($)
+      <input placeholder="" id="loanDownPayment" name="loanDownPayment" tabindex="10" onkeyup="runCalculation()">
+    </label>
+  </div>
+  <!--
+  <div class="col-3">
+    <label>
+      Availability
+      <select tabindex="5">
+        <option>5-15 hrs per week</option>
+        <option>15-30 hrs per week</option>
+        <option>30-40 hrs per week</option>
+      </select>
+    </label>
+  </div>
+  -->
+  <div class="col-4" id="evMonthlyBox">
+    <label>
+      Monthly (Model 3)
+      <input placeholder="" id="evMonthly" name="evMonthly" class="resultInput"disabled="disabled">
+    </label>
+  </div>
+  <div class="col-4" id="evTcoBox">
+    <label>
+      Total Cost of Ownership (Model 3)
+      <input placeholder="" id="evTco" name="evTco" class="resultInput" disabled="disabled">
+    </label>
+  </div>
+  <div class="col-4" id="gasMonthlyBox">
+    <label>
+      Monthly (<span id="vehicleMonthlyResultLabel"></span>)
+      <input placeholder="" id="gasMonthly" name="gasMonthly" class="resultInput" disabled="disabled">
+    </label>
+  </div>
+  <div class="col-4" id="gasTcoBox">
+    <label>
+      Total Cost of Ownership (<span id="vehicleTcoResultLabel"></span>)
+      <input placeholder="" id="gasTco" name="gasTco" class="resultInput">
+    </label>
+  </div>
+  
+  <div class="col-submit">
+    <button class="submitbtn" id="goButton" tabindex="11" onmouseup="window.open('https://ts.la/aaron21086', '_blank')">How do I get a Model 3 with 1,500 KMs free?</button>
+  </div>
+  
+  
+  </form>
+  </div>
+ <div align="center" id="footer">Horse car stats pulled from <a href="https://www.edmunds.com/" target="_blank">Edmunds</a> and <a href="https://fcr-ccc.nrcan-rncan.gc.ca/en" target="_blank">FIP</a>.<br />Tesla Model 3 stats are as follows, 16.1kWH/100KMs, electricity cost of $0.065 CAD (Ontario, off-peak), $49,990 CAD (SR+, inclusive of federal incentive).</div>
+</body>
+</html>
